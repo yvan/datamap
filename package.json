@@ -9,7 +9,7 @@
   "dependencies": {
     "express": "~4.9.x",
     "three": "latest",
-    "handlebars":"latest"
+    "express-handlebars":"latest"
   },
   "engines": {
     "node": "0.10.x"
