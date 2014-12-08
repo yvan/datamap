@@ -1,0 +1,26 @@
+{
+  "name": "datamap",
+  "version": "0.0.0",
+  "description": "map data onto a visualized map",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "~4.9.x",
+    "three":"latest"
+  },
+  "engines": {
+    "node": "0.10.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yvanscher/datamap"
+  },
+  "keywords": [
+    "data",
+    "map",
+    "visualization"
+  ],
+  "license": "MIT"
+}
