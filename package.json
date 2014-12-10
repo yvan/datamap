@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "express": "~4.9.x",
-    "three": "latest",
-    "express-handlebars":"latest"
+    "express-handlebars":"latest",
+    "handlebars": "latest"
   },
   "engines": {
     "node": "0.10.x"
