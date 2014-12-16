@@ -7,8 +7,9 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "d3-tip": "^0.6.7",
     "express": "~4.9.x",
-    "express-handlebars":"latest",
+    "express-handlebars": "latest",
     "handlebars": "latest"
   },
   "engines": {

@@ -3,7 +3,12 @@ $(function(){
 	var worldMap;
 	var mouse = { x: 0, y: 0 }
 	var countries = []
+	var statesUS = []
 	var shapesRendered = []
+	var shapesRenderedUS = []
+	var originalColors = []
+	var originalColorsUS = []
+	var currentYear = ''
 
 	function Map() {
 
@@ -102,6 +107,7 @@ $(function(){
 
 		add_countries: function(data, countrydata) {
 
+				var countries = []
 				var i, j;
 
 				// convert to threejs meshes
@@ -121,13 +127,14 @@ $(function(){
 
 				// extrude paths and add color
 				for (i = 0 ; i < countries.length ; i++) {
-	
+					
+					var colorToStore = this.getInternetColor(countries[i].data, countrydata)
 					// create material color based on average
 					var material = new THREE.MeshPhongMaterial({
-						color: this.getInternetColor(countries[i].data, countrydata),
+						color: colorToStore,
 						opacity:0.5
 					});
-
+					originalColors[i] = colorToStore
 					// extrude mesh
 					var shape3d = countries[i].mesh.extrude({
 						amount: 1,
@@ -154,7 +161,7 @@ $(function(){
 
 		add_US_states: function(data, statedata){
 
-				var countries = [];
+				var countries = []
 				var i, j;
 
 				// convert to threejs meshes
@@ -175,11 +182,13 @@ $(function(){
 				// extrude paths and add color
 				for (i = 0 ; i < countries.length ; i++) {
 
+					var colorToStore = this.getInternetColor(countries[i].data, statedata)
 					// create material color based on average
 					var material = new THREE.MeshPhongMaterial({
-						color: this.getInternetColor(countries[i].data, statedata),
+						color: colorToStore,
 						opacity:0.5
 					});
+					originalColorsUS[i] = colorToStore
 
 					// extrude mesh
 					var shape3d = countries[i].mesh.extrude({
@@ -200,6 +209,7 @@ $(function(){
 					toAdd.translateY(20);
 
 					// add to scene
+					shapesRenderedUS[i] = toAdd
 					this.scene.add(toAdd);
 				}
 		},
@@ -216,7 +226,6 @@ $(function(){
 				multiplier += data.name.charCodeAt(i);
 			}
 
-
 			// - use our previously calculated arbitrary number
 			// - to make a color
 			multiplier = (1.0/366)*multiplier;
@@ -224,7 +233,7 @@ $(function(){
 		},
 		// - colors form light to dark based on internet speed:
 		// - #ffbaba, #ff7b7b, #ff5252, #ff0000, #a70000
-		getInternetColor: function(data, countryorstatedata, year) {
+		getInternetColor: function(data, countryorstatedata) { //'data' here are the shapes/country infos
 			// - internet speeds in kbps, constants calculated by sorting in excel.
 			var lowestDL = 56.6552, highestDL = 100270.0
 			var lowestUP = 14.0, highestUP = 92062.7
@@ -232,13 +241,13 @@ $(function(){
 
 			if(!(typeof countryorstatedata[data.name] === 'undefined')){
 
-				lowestDLRatio = countryorstatedata[data.name]['summary']['lowestDL'] / lowestDL / 0.20
-				highestDLRatio = countryorstatedata[data.name]['summary']['highestDL'] / highestDL / 0.20
-				lowestUPRatio = countryorstatedata[data.name]['summary']['lowestUP'] / lowestUP / 0.20
-				highestUPRatio = countryorstatedata[data.name]['summary']['highestUP'] / highestUP / 0.20
-				console.log(data.name)
-				console.log(Math.floor(lowestDLRatio))
-				var eval =  Math.floor(highestDLRatio)+Math.floor(highestUPRatio)
+				lowestDLRatio = countryorstatedata[data.name]['summary']['lowestDL'] / lowestDL / 0.167
+				highestDLRatio = countryorstatedata[data.name]['summary']['highestDL'] / highestDL / 0.167
+				lowestUPRatio = countryorstatedata[data.name]['summary']['lowestUP'] / lowestUP / 0.167
+				highestUPRatio = countryorstatedata[data.name]['summary']['highestUP'] / highestUP / 0.167
+				//console.log(data.name)
+				//console.log(Math.floor(lowestDLRatio))
+				var eval =  Math.floor(highestDLRatio+highestUPRatio)
 				if(eval < 1){
 					return 0xffbaba
 				}else if(eval < 2){
@@ -247,132 +256,544 @@ $(function(){
 					return 0xff5252
 				}else if(eval < 4){
 					return 0xff0000
-				}else{
+				}else if(eval < 5){
 					return 0xa70000
-				}				
+				}else if(eval >= 5){
+					return 0x5b0000
+				}else{//get anything with an invalid eval
+					return 0xffffff
+				}
 			}
 		},
 
-		getInternetYearColor: function(countryorstatedata, year){
-			//make these variables into constants
-			//arbitrarily picked constant values for now
-			var i = 0
+		getInternetYearColor: function(countryorstatedata, year, shapesToRecolor, originalColorSet){
+
 			var lowestDLRatio, highestDLRatio, lowestUPRatio, highestUPRatio
 			var lowestDL, highestDL, lowestUP, highestUP
-			if(year == '00'){
 
+			if(year == '100'){
+
+				for (i=0; i<shapesToRecolor.length;i++) {
+					
+					shapesToRecolor[i].material.color.setHex(originalColorSet[i]); 
+				}	
+				return
 			}else if(year == '08'){
 
 			 	lowestDL = 56
-				highestDL = 1000
+				highestDL = 29295.5
 				lowestUP = 25
-				highestUP = 500
+				highestUP = 18384.9
 			}else if(year == '09'){
 				
 				lowestDL = 75
-				onineighestDL = 2000
-				oninelowestUP = 50
-				oninehighestUP = 1000
+				highestDL = 2000
+				lowestUP = 50
+				highestUP = 21502.5
 			}else if(year == '10'){
 
 				lowestDL = 1000
-				highestDL = 4000
+				highestDL = 36980.7
 				lowestUP = 250
-				highestUP = 2000					
+				highestUP = 20690					
 			}else if(year == '11'){
 				
 				lowestDL = 2000
-				highestDL = 7500
+				highestDL = 44600.3
 				lowestUP = 750
-				highestUP = 4000
+				highestUP = 27808.1
 			}else if(year == '12'){
 
 				lowestDL = 4000
-				highestDL = 8000
+				highestDL = 50898.3
 				lowestUP = 1000
-				highestUP = 8000				
+				highestUP = 39401.5				
 			}else if(year == '13'){
 
 				lowestDL = 6000
-				highestDL = 90000
+				highestDL = 71561.5
 				lowestUP = 2000
-				highestUP = 9500				
+				highestUP = 59391.5				
 			}else if(year == '14'){
 				lowestDL = 8000
 				highestDL = 100270
 				lowestUP = 4000
-				highestUP = 10000	
+				highestUP = 92062.7	
+			}
+
+			//wipes all colors from the current canvas
+			for(j=0; j<shapesToRecolor.length;j++){
+				shapesToRecolor[j].material.color.setHex(0xffffff); 
+			}
+
+			for (var index in countryorstatedata) {
+
+				if(index !== 'region' && index!=='country' && !(typeof countryorstatedata[index] === 'undefined')){
+					console.log(index)
+					lowestDLRatio = countryorstatedata[index]['summary'][year]['lowestDL'] / lowestDL / 0.167
+					highestDLRatio = countryorstatedata[index]['summary'][year]['highestDL'] / highestDL / 0.167
+					lowestUPRatio = countryorstatedata[index]['summary'][year]['lowestUP'] / lowestUP / 0.167
+					highestUPRatio = countryorstatedata[index]['summary'][year]['highestUP'] / highestUP / 0.167
+
+					var eval =  Math.floor(highestDLRatio+highestUPRatio)
+					console.log(eval)
+					if(eval < 1){
+						
+						for (var j = 0; j < shapesToRecolor.length; j++) {
+							if(shapesToRecolor[j].name == index){
+								shapesToRecolor[j].material.color.setHex(0xffbaba); 
+							}
+						}
+						
+					}else if(eval < 2){
+						for (var j = 0; j < shapesToRecolor.length; j++) {
+							if(shapesToRecolor[j].name == index){
+								shapesToRecolor[j].material.color.setHex(0xff7b7b); 
+							}
+						}
+					}else if(eval < 3){
+						for (var j = 0; j < shapesToRecolor.length; j++) {
+							if(shapesToRecolor[j].name == index){
+								shapesToRecolor[j].material.color.setHex(0xff5252); 
+							}
+						}
+					}else if(eval < 4){
+						for (var j = 0; j < shapesToRecolor.length; j++) {
+							if(shapesToRecolor[j].name == index){
+								shapesToRecolor[j].material.color.setHex(0xff0000); 
+							}
+						}
+					}else if(eval < 5){
+						for (var j = 0; j < shapesToRecolor.length; j++) {
+							if(shapesToRecolor[j].name == index){
+								shapesToRecolor[j].material.color.setHex(0xa70000);
+							}
+						}						 
+					}else if(eval >= 5){
+						for (var j = 0; j < shapesToRecolor.length; j++) {
+							if(shapesToRecolor[j].name == index){
+								shapesToRecolor[j].material.color.setHex(0x5b0000); 
+							}
+						}
+					}else{
+						for (var j = 0; j < shapesToRecolor.length; j++) {
+							if(shapesToRecolor[j].name == index){
+								shapesToRecolor[j].material.color.setHex(0xffffff);
+							}
+						}						
+					}			
+				}
+				
+			}	
+		},
+
+		getLatency: function(countryorstatedata, year, shapesToRecolor, originalColorSet){
+
+			//make these variables into constants
+			//arbitrarily picked constant values for now
+			var lowestDLNoYr = 0, highestDLNoYr = 26.1488, lowestUPNoYr = 0, highestUPNoYr = 465.678
+			var lowestDLRatio, highestDLRatio, lowestUPRatio, highestUPRatio
+			var lowestDL, highestDL, lowestUP, highestUP
+
+           // "highestDL": 2987.69/2000 - 
+           // "highestUP": 619.174/21502.5 - 
+           // sum 1.52 
+
+			if(year == '100'){
+
+			}else if(year == '08'){
+
+			 	lowestDL = 0
+				highestDL = 0
+				lowestUP = 0
+				highestUP = 0
+			}else if(year == '09'){
+				
+				lowestDL = 0
+				highestDL = 17.0014
+				lowestUP = 0
+				highestUP = 417.669
+			}else if(year == '10'){
+
+				lowestDL = 0
+				highestDL = 23.5853
+				lowestUP = 0
+				highestUP = 455.03				
+			}else if(year == '11'){
+				
+				lowestDL = 0
+				highestDL = 20.9725
+				lowestUP = 0
+				highestUP = 465.678
+			}else if(year == '12'){
+
+				lowestDL = 0
+				highestDL = 26.1488
+				lowestUP = 0
+				highestUP = 392.161		
+			}else if(year == '13'){
+
+				lowestDL = 0
+				highestDL = 10.2846
+				lowestUP = 0
+				highestUP = 387.982			
+			}else if(year == '14'){
+				lowestDL = 0
+				highestDL = 11.7312
+				lowestUP = 0
+				highestUP = 240.653
+			}
+
+			//wipes all colors from the current canvas
+			for(j=0; j<shapesToRecolor.length;j++){
+				shapesToRecolor[j].material.color.setHex(0xffffff); 
 			}
 
 			for (var index in countryorstatedata) {
 
 				if(index!=='country' && !(typeof countryorstatedata[index] === 'undefined')){
 
-					lowestDLRatio = countryorstatedata[index]['summary']['lowestDL'] / lowestDL / 0.20
-					highestDLRatio = countryorstatedata[index]['summary']['highestDL'] / highestDL / 0.20
-					lowestUPRatio = countryorstatedata[index]['summary']['lowestUP'] / lowestUP / 0.20
-					highestUPRatio = countryorstatedata[index]['summary']['highestUP'] / highestUP / 0.20
-
-					console.log(Math.floor(lowestDLRatio))
-					var eval =  Math.floor(highestDLRatio)+Math.floor(highestUPRatio)
-					if(eval < 1){
-						// create material color based on average
-						/*var material = new THREE.MeshPhongMaterial({
-							color: 0xffbaba,
-							opacity:0.5
-						})*/
-						shapesRendered[i].material.color.setHex(0xffbaba); 
-						
-					}else if(eval < 2){
-						/*var material = new THREE.MeshPhongMaterial({
-							color: 0xff7b7b,
-							opacity:0.5
-						})*/
-						shapesRendered[i].material.color.setHex(0xff7b7b); 
-					}else if(eval < 3){
-						/*var material = new THREE.MeshPhongMaterial({
-							color: 0xff5252,
-							opacity:0.5
-						})*/
-						shapesRendered[i].material.color.setHex(0xff5252); 
-					}else if(eval < 4){
-						/*var material = new THREE.MeshPhongMaterial({
-							color: 0xff0000,
-							opacity:0.5
-						})*/
-						shapesRendered[i].material.color.setHex(0xff0000); 
+					if(year == ''){
+						//lowestDLRatio = countryorstatedata[index]['summary']['lowestPL'] / lowestDL / 0.167
+						//highestDLRatio = countryorstatedata[index]['summary']['highestPL'] / highestDL / 0.167
+						lowestUPRatio = countryorstatedata[index]['summary']['lowestLAT'] / lowestUPNoYr / 0.167
+						highestUPRatio = countryorstatedata[index]['summary']['highestLAT'] / highestUPNoYr / 0.167
 					}else{
-						/*var material = new THREE.MeshPhongMaterial({
-							color: 0xa70000,
-							opacity:0.5
-						})*/
-						shapesRendered[i].material.color.setHex(0xa70000); 
+						//lowestDLRatio = countryorstatedata[index]['summary'][year]['lowestPL'] / lowestDL / 0.167
+						//highestDLRatio = countryorstatedata[index]['summary'][year]['highestPL'] / highestDL / 0.167
+						lowestUPRatio = countryorstatedata[index]['summary'][year]['lowestLAT'] / lowestUP / 0.167
+						highestUPRatio = countryorstatedata[index]['summary'][year]['highestLAT'] / highestUP / 0.167
+					}
+
+					var eval =  Math.floor(highestUPRatio)
+					if(index == 'missouri'){
+						console.log(index)
+						console.log(eval)
+					}
+					if(eval < 1){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+							}
+						}
+					}else if(eval < 2){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff7b7b); 
+							}
+						}
+					}else if(eval < 3){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){						
+								shapesToRecolor[i].material.color.setHex(0xff5252); 
+							}
+						}
+					}else if(eval < 4){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff0000);
+							}
+						} 
+					}else if(eval < 5){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xa70000); 
+							}
+						}
+					}else if(eval >= 5){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0x5b0000); 
+							}
+						}
+					}else{
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xffffff);
+							}
+						}
 					}				
 				}
-
-				// extrude mesh
-				/*var shape3d = countries[i].mesh.extrude({
-					amount: 1,
-					bevelEnabled: false
-				})
-				// create a mesh based on material and extruded shape
-				var toAdd = new THREE.Mesh(shape3d, material)
-
-				//set name of mesh
-				toAdd.name = countries[i][index]
-
-				// rotate and position the elements
-				toAdd.rotation.x = Math.PI/2
-				toAdd.translateX(-490)
-				toAdd.translateZ(50)
-				toAdd.translateY(20)
-
-				// add to scene
-				this.scene.add(toAdd)
-*/
-				i++
 			}	
 		},
+		getPacketloss: function(countryorstatedata, year, shapesToRecolor, originalColorSet){
+
+			//make these variables into constants
+			//arbitrarily picked constant values for now
+			var lowestDLNoYr = 0, highestDLNoYr = 26.1488, lowestUPNoYr = 0, highestUPNoYr = 465.678
+			var lowestDLRatio, highestDLRatio, lowestUPRatio, highestUPRatio
+			var lowestDL, highestDL, lowestUP, highestUP
+
+           // "highestDL": 2987.69/2000 - 
+           // "highestUP": 619.174/21502.5 - 
+           // sum 1.52 
+
+			if(year == '100'){
+
+			}else if(year == '08'){
+
+			 	lowestDL = 0
+				highestDL = 0
+				lowestUP = 0
+				highestUP = 0
+			}else if(year == '09'){
+				
+				lowestDL = 0
+				highestDL = 17.0014
+				lowestUP = 0
+				highestUP = 417.669
+			}else if(year == '10'){
+
+				lowestDL = 0
+				highestDL = 23.5853
+				lowestUP = 0
+				highestUP = 455.03				
+			}else if(year == '11'){
+				
+				lowestDL = 0
+				highestDL = 20.9725
+				lowestUP = 0
+				highestUP = 465.678
+			}else if(year == '12'){
+
+				lowestDL = 4000
+				highestDL = 26.1488
+				lowestUP = 1000
+				highestUP = 392.161		
+			}else if(year == '13'){
+
+				lowestDL = 0
+				highestDL = 10.2846
+				lowestUP = 0
+				highestUP = 387.982			
+			}else if(year == '14'){
+				lowestDL = 0
+				highestDL = 11.7312
+				lowestUP = 0
+				highestUP = 240.653
+			}
+
+			//wipes all colors from the current canvas
+			for(j=0; j<shapesToRecolor.length;j++){
+				shapesToRecolor[j].material.color.setHex(0xffffff); 
+			}
+
+			for (var index in countryorstatedata) {
+
+				if(index!=='country' && !(typeof countryorstatedata[index] === 'undefined')){
+
+					if(year == ''){
+
+						lowestDLRatio = countryorstatedata[index]['summary']['lowestPL'] / lowestDLNoYr / 0.167
+						highestDLRatio = countryorstatedata[index]['summary']['highestPL'] / highestDLNoYr  / 0.167
+						//lowestUPRatio = countryorstatedata[index]['summary']['lowestUP'] / lowestUP / 0.167
+						//highestUPRatio = countryorstatedata[index]['summary']['highestUP'] / highestUP / 0.167
+					}else{
+
+						lowestDLRatio = countryorstatedata[index]['summary'][year]['lowestPL'] / lowestDL / 0.167
+						highestDLRatio = countryorstatedata[index]['summary'][year]['highestPL'] / highestDL / 0.167
+						//lowestUPRatio = countryorstatedata[index]['summary'][year]['lowestUP'] / lowestUP / 0.167
+						//highestUPRatio = countryorstatedata[index]['summary'][year]['highestUP'] / highestUP / 0.167
+					}
+
+
+					var eval =  Math.floor(highestDLRatio)
+					//console.log("packetlosss"+eval)
+					if(eval < 1){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+							}
+						}
+					}else if(eval < 2){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff7b7b);
+							}
+						} 
+					}else if(eval < 3){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff5252); 
+							}
+						}
+					}else if(eval < 4){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff0000); 
+							}
+						}
+					}else if(eval < 5){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xa70000); 
+							}
+						}
+					}else if(eval >= 5){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0x5b0000);
+							}
+						} 
+					}else{
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xffffff);
+							}
+						}
+					}				
+				}
+			}	
+		},
+
+		getGrowthRates: function(countryorstatedata, year, shapesToRecolor, originalColorSet){
+
+			var lowestDLRatio, highestDLRatio, lowestUPRatio, highestUPRatio
+			var lowestDL, highestDL, lowestUP, highestUP
+
+			var lowestDL = 56.6552, highestDL = 100270.0
+			var lowestUP = 14.0, highestUP = 92062.7
+
+			//wipes all colors from the current canvas
+			for(j=0; j<shapesToRecolor.length;j++){
+				shapesToRecolor[j].material.color.setHex(0xffffff); 
+			}
+
+			for (var index in countryorstatedata) {
+
+				if(index!=='country' && !(typeof countryorstatedata[index] === 'undefined')){
+
+					lowestDLRatio = countryorstatedata[index]['summary']['lowestDL'] 
+					highestDLRatio = countryorstatedata[index]['summary']['highestDL'] 
+					//lowestUPRatio = countryorstatedata[index]['summary']['lowestUP'] 
+					//highestUPRatio = countryorstatedata[index]['summary']['highestUP'] 
+
+					var eval =  Math.floor(((highestDLRatio-lowestDLRatio)/lowestDLRatio))
+					console.log(index)
+					console.log(eval)
+					if(eval < 10){
+
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+	
+								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+							}
+						}
+						
+					}else if(eval < 20){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff7b7b); 
+							}
+						}
+					}else if(eval < 30){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff5252); 
+							}
+						}
+					}else if(eval < 40){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff0000);
+							}
+						} 
+					}else if(eval < 50){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xa70000); 
+							}
+						}
+					}else if(eval >= 50){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0x5b0000); 
+							}
+						}
+					}else{
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xffffff);
+							}
+						}
+					}				
+				}
+			}
+		},
+
+		getInternetValue: function(countryorstatedata, year, shapesToRecolor, originalColorSet){
+
+			var lowestDLRatio, highestDLRatio, lowestUPRatio, highestUPRatio
+			var lowestDL, highestDL, lowestUP, highestUP
+
+			var lowestDL = 1.74948, highestDL = 24.3186
+			var lowestUP = 6.34959, highestUP = 128.866
+
+			//wipes all colors from the current canvas
+			for(j=0; j<shapesToRecolor.length;j++){
+				shapesToRecolor[j].material.color.setHex(0xffffff); 
+			}
+
+			for (var index in countryorstatedata) {
+
+				if(index!=='country' && !(typeof countryorstatedata[index] === 'undefined')){
+
+					//lowestDLRatio = countryorstatedata[index]['summary']['lowestDL'] / 1.74948
+					highestDLRatio = countryorstatedata[index]['summary']['highestDL'] / 24.3186
+					//lowestUPRatio = countryorstatedata[index]['summary']['lowestUP'] / 634959
+					highestUPRatio = countryorstatedata[index]['summary']['highestUP'] / 128.866
+
+					var eval =  Math.floor(highestDLRatio+highestUPRatio)
+					console.log(index)
+					console.log(eval)
+					if(eval < 1){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+							}
+						}
+						
+					}else if(eval < 2){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff7b7b); 
+							}
+						}
+					}else if(eval < 3){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff5252); 
+							}
+						}
+					}else if(eval < 4){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xff0000); 
+							}
+						}
+					}else if(eval < 5){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xa70000);
+							}
+						} 
+					}else if(eval >= 5){
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0x5b0000); 
+							}
+						}
+					}else{
+						for (var i = 0; i < shapesToRecolor.length; i++) {
+							if(shapesToRecolor[i].name == index){
+								shapesToRecolor[i].material.color.setHex(0xffffff);
+							}
+						}
+					}				
+				}
+			}
+		},
+
 		setCameraPosition: function(x, y, z, lx, lz) {
 			this.CAMERA_X = x;
 			this.CAMERA_Y = y;
@@ -481,8 +902,28 @@ $(function(){
 
 				if(worldMap.INTERSECTED) {
 					$('#country-name').html(worldMap.INTERSECTED.name);
+					/*data = "aftr"
+					/* Initialize tooltip */
+					/*var tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return d; });
+					var w = 20,
+						h = 20
+					var vis = d3.select('#country-name')
+						.append('svg')
+						.attr('width',w)
+						.attr('height', h)
+					/* Invoke the tip in the context of your visualization */
+					//vis.call(tip)
+
+					/*vis.selectAll('rect')
+					  .data(data)
+					.enter().append('rect')
+					  .attr('width', w)
+					  .attr('height', h)
+					  .on('mouseover', tip.show)
+					  .on('mouseout', tip.hide)	*/
+
 				} else {
-					$('#country-name').html("move mouse over map");
+					$('#country-name').html("");
 				}
 
 				onFrame(tick);
@@ -540,39 +981,116 @@ $(function(){
 			  break;
 		   case "#2008":
 				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
-					worldMap.getInternetYearColor(countrydata,'08')
+					worldMap.getInternetYearColor(countrydata,'08', shapesRendered, originalColors)
 				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'08', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = '08'
 				break;
 		   case "#2009":
 				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
-					worldMap.getInternetYearColor(countrydata,'09')
+					worldMap.getInternetYearColor(countrydata,'09', shapesRendered, originalColors)
 				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'09', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = '09'
 				break;
 		   case "#2010":
-				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
-					worldMap.getInternetYearColor(countrydata,'10')
+				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'10', shapesRendered, originalColors)
 				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'10', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = '10'
 				break;
 		   case "#2011":
 				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
-					worldMap.getInternetYearColor(countrydata,'11')
+					worldMap.getInternetYearColor(countrydata,'11', shapesRendered, originalColors)
 				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'11', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = '11'
 				break;
 		   case "#2012":
 				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
-					worldMap.getInternetYearColor(countrydata,'12')
+					worldMap.getInternetYearColor(countrydata,'12', shapesRendered, originalColors)
 				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'12', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = '12'
 				break;
 		   case "#2013":
 				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
-					worldMap.getInternetYearColor(countrydata,'13')
+					worldMap.getInternetYearColor(countrydata,'13', shapesRendered, originalColors)
 				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'13', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = '13'
 				break;
 		   case "#2014":
 				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
-					worldMap.getInternetYearColor(countrydata,'14')
+					worldMap.getInternetYearColor(countrydata,'14', shapesRendered, originalColors)
 				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'14', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = '14'
 				break;
+		   case "#average":
+		   		$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
+					worldMap.getInternetYearColor(countrydata,'100', shapesRendered, originalColors)
+				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'100', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = ''
+				break;
+		   case "#growth":
+		   		$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
+					worldMap.getGrowthRates(countrydata,currentYear, shapesRendered, originalColors)
+				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getGrowthRates(statedata,currentYear, shapesRenderedUS, originalColorsUS)
+				})
+		   		break;
+		   case "#packetloss":
+		   		$.when($.getJSON("internetdata/countryqualityfinal.json")).then(function(countrydata){
+					worldMap.getPacketloss(countrydata,currentYear, shapesRendered, originalColors)
+				})
+				$.when($.getJSON("internetdata/statequalityfinal.json")).then(function(statedata){
+					worldMap.getPacketloss(statedata,currentYear, shapesRenderedUS, originalColorsUS)
+				})
+		   		break;
+		   case "#latency":
+		   		$.when($.getJSON("internetdata/countryqualityfinal.json")).then(function(countrydata){
+					worldMap.getLatency(countrydata,currentYear, shapesRendered, originalColors)
+				})
+				$.when($.getJSON("internetdata/statequalityfinal.json")).then(function(statedata){
+					worldMap.getLatency(statedata,currentYear, shapesRenderedUS, originalColorsUS)
+				})
+		   		break;
+		   case "#internetvalue":
+		   		$.when($.getJSON("internetdata/countrydailyvaluefinal.json")).then(function(countrydata){
+					worldMap.getInternetValue(countrydata,currentYear, shapesRendered, originalColors)
+				})
+				$.when($.getJSON("internetdata/statedailyvaluefinal.json")).then(function(statedata){
+					worldMap.getInternetValue(statedata,currentYear, shapesRenderedUS, originalColorsUS)
+				})
+		   		break;
+		   case "#averagemetrics"://goes back to latency map
+		   		$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
+					worldMap.getInternetYearColor(countrydata,'100', shapesRendered, originalColors)
+				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'100', shapesRenderedUS, originalColorsUS)
+				})
+		   		break;
 		}
 	});
 
