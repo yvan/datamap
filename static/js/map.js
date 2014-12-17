@@ -1,38 +1,43 @@
 $(function(){
 
 	var worldMap;
-	var mouse = { x: 0, y: 0 }
-	var countries = []
 	var statesUS = []
-	var shapesRendered = []
-	var shapesRenderedUS = []
-	var originalColors = []
-	var originalColorsUS = []
+	var countries = []
 	var currentYear = ''
-
+	var shapesRendered = []
+	var originalColors = []
+	var shapesRenderedUS = []
+	var originalColorsUS = []
+	var mouse = { x: 0, y: 0 }
+	
 	function Map() {
 
+		//this section sets all the constants
+		//we will use for the camera position
+		//the scene size, etc...
 		this.WIDTH       = window.innerWidth;
 		this.HEIGHT      = window.innerHeight;
 
-		this.VIEW_ANGLE  = 45;
-		this.NEAR        = 0.1;
-		this.FAR         = 10000;
-		this.CAMERA_X    = 0;
-		this.CAMERA_Y    = 1000;
-		this.CAMERA_Z    = 500;
-		this.CAMERA_LX   = 0;
-		this.CAMERA_LY   = 0;
-		this.CAMERA_LZ   = 0;
+		this.VIEW_ANGLE  = 45
+		this.NEAR        = 0.1
+		this.FAR         = 10000
+		this.CAMERA_X    = 0
+		this.CAMERA_Y    = 1000
+		this.CAMERA_Z    = 500
+		this.CAMERA_LX   = 0
+		this.CAMERA_LY   = 0
+		this.CAMERA_LZ   = 0
 
-		this.geo;
-		this.scene = {};
-		this.renderer = {};
-		this.projector = {};
-		this.camera = {};
-		this.stage = {};
+		//for storing the maps various three.js objs
+		//geo is variable that helps us translate
+		//geoJSON to shapes. the rest are standard three.js
+		this.geo
+		this.scene = {}
+		this.renderer = {}
+		this.projector = {}
+		this.camera = {}
 
-		this.INTERSECTED = null;
+		this.INTERSECTED = null
 	}
 
 	Map.prototype = {
@@ -41,176 +46,181 @@ $(function(){
 
 			geoConfig = function() {
 
-				this.mercator = d3.geo.equirectangular();
-				this.path = d3.geo.path().projection(this.mercator);
+				this.mercator = d3.geo.equirectangular()
+				this.path = d3.geo.path().projection(this.mercator)
 
-				var translate = this.mercator.translate();
-				translate[0] = 500;
-				translate[1] = 0;
+				var translate = this.mercator.translate()
+				translate[0] = 500
+				translate[1] = 0
 
-				this.mercator.translate(translate);
-				this.mercator.scale(200);
+				this.mercator.translate(translate)
+				this.mercator.scale(200)
 			}
 
-			this.geo = new geoConfig();
+			this.geo = new geoConfig()
 		},
 
 		init_tree: function() {
 
+			//if our browser can run webGL we run webGL
 			if( Detector.webgl ){
 				this.renderer = new THREE.WebGLRenderer({
 					antialias : true
-				});
-				this.renderer.setClearColorHex( 0xBBBBBB, 1 );
-			} else {
-				this.renderer = new THREE.CanvasRenderer();
+				})
+				this.renderer.setClearColorHex( 0xBBBBBB, 1 )
+			} else { //if we can't run webGL we canvas render
+				this.renderer = new THREE.CanvasRenderer()
 			}
 
-			this.renderer.setSize( this.WIDTH, this.HEIGHT );
+			//set the size of the canvas render to the size
+			//of our screen
+			this.renderer.setSize( this.WIDTH, this.HEIGHT )
 
-			this.projector = new THREE.Projector();
+			this.projector = new THREE.Projector()
 
-			// append renderer to dom element
-			$("#worldmap").append(this.renderer.domElement);
+			// append renderer to the appropriate element
+			// in this case the div with id worldmap
+			$("#worldmap").append(this.renderer.domElement)
 
-			// create a scene
-			this.scene = new THREE.Scene();
+			// create a new threejs scene
+			this.scene = new THREE.Scene()
 
-			// put a camera in the scene
-			this.camera = new THREE.PerspectiveCamera(this.VIEW_ANGLE, this.WIDTH / this.HEIGHT, this.NEAR, this.FAR);
-			this.camera.position.x = this.CAMERA_X;
-			this.camera.position.y = this.CAMERA_Y;
-			this.camera.position.z = this.CAMERA_Z;
-			this.camera.lookAt( { x: this.CAMERA_LX, y: 0, z: this.CAMERA_LZ} );
-			this.scene.add(this.camera);
+			// populate this new scene with the camera
+			this.camera = new THREE.PerspectiveCamera(this.VIEW_ANGLE, this.WIDTH / this.HEIGHT, this.NEAR, this.FAR)
+			this.camera.position.x = this.CAMERA_X
+			this.camera.position.y = this.CAMERA_Y
+			this.camera.position.z = this.CAMERA_Z
+			this.camera.lookAt( { x: this.CAMERA_LX, y: 0, z: this.CAMERA_LZ} )
+			this.scene.add(this.camera)
 		},
 
-
+		//adds lighting to the scene
 		add_light: function(x, y, z, intensity, color) {
-			var pointLight = new THREE.PointLight(color);
-			pointLight.position.x = x;
-			pointLight.position.y = y;
-			pointLight.position.z = z;
-			pointLight.intensity = intensity;
-			this.scene.add(pointLight);
+			var pointLight = new THREE.PointLight(color)
+			pointLight.position.x = x
+			pointLight.position.y = y
+			pointLight.position.z = z
+			pointLight.intensity = intensity
+			this.scene.add(pointLight)
 		},
 
+		//this is from one of the basic tutorials, adds a plane
 		add_plane: function(x, y, z, color) {
-			var planeGeo = new THREE.CubeGeometry(x, y, z);
-			var planeMat = new THREE.MeshLambertMaterial({color: color});
-			var plane = new THREE.Mesh(planeGeo, planeMat);
+			var planeGeo = new THREE.CubeGeometry(x, y, z)
+			var planeMat = new THREE.MeshLambertMaterial({color: color})
+			var plane = new THREE.Mesh(planeGeo, planeMat)
 
 			// rotate it to correct position
-			plane.rotation.x = -Math.PI/2;
-			this.scene.add(plane);
+			plane.rotation.x = -Math.PI/2
+			this.scene.add(plane)
 		},
 
 		add_countries: function(data, countrydata) {
 
 				var countries = []
-				var i, j;
+				var i, j
 
 				// convert to threejs meshes
-				for (i = 0 ; i < data.features.length ; i++) {
-					var geoFeature = data.features[i];
-					var properties = geoFeature.properties;
-					var feature = this.geo.path(geoFeature);
+				for (i = 0; i < data.features.length; i++) {
+					var geoFeature = data.features[i]
+					var properties = geoFeature.properties
+					var feature = this.geo.path(geoFeature)
 
-					// we only need to convert it to a three.js path
-					var mesh = transformSVGPathExposed(feature);
+					//convert to three.js mesh path from geoJSON
+					var mesh = transformSVGPathExposed(feature)
 
-					// add to array
-					for (j = 0 ; j < mesh.length ; j++) {
-						  countries.push({"data": properties, "mesh": mesh[j]});
+				
+					for (j = 0; j < mesh.length; j++) {
+						  countries.push({"data": properties, "mesh": mesh[j]})
 					}
 				}
 
 				// extrude paths and add color
-				for (i = 0 ; i < countries.length ; i++) {
+				for (i = 0; i < countries.length; i++) {
 					
 					var colorToStore = this.getInternetColor(countries[i].data, countrydata)
 					// create material color based on average
 					var material = new THREE.MeshPhongMaterial({
 						color: colorToStore,
 						opacity:0.5
-					});
+					})
 					originalColors[i] = colorToStore
 					// extrude mesh
 					var shape3d = countries[i].mesh.extrude({
 						amount: 1,
 						bevelEnabled: false
-					});
+					})
 
 					// create a mesh based on material and extruded shape
-					var toAdd = new THREE.Mesh(shape3d, material);
+					var toAdd = new THREE.Mesh(shape3d, material)
 
 					//set name of mesh
-					toAdd.name = countries[i].data.name;
+					toAdd.name = countries[i].data.name
 
-					// rotate and position the elements
-					toAdd.rotation.x = Math.PI/2;
-					toAdd.translateX(-490);
-					toAdd.translateZ(50);
-					toAdd.translateY(20);
+					// position the elements
+					toAdd.rotation.x = Math.PI/2
+					toAdd.translateX(-490)
+					toAdd.translateZ(50)
+					toAdd.translateY(20)
 
-					// add to scene and shapes
+					// add to scene and store in shapes
 					shapesRendered[i] = toAdd
-					this.scene.add(toAdd);
+					this.scene.add(toAdd)
 				}
 		},
 
 		add_US_states: function(data, statedata){
 
 				var countries = []
-				var i, j;
+				var i, j
 
 				// convert to threejs meshes
-				for (i = 0 ; i < data.features.length ; i++) {
-					var geoFeature = data.features[i];
-					var properties = geoFeature.properties;
-					var feature = this.geo.path(geoFeature);
+				for (i = 0; i < data.features.length; i++) {
+					var geoFeature = data.features[i]
+					var properties = geoFeature.properties
+					var feature = this.geo.path(geoFeature)
 
-					// we only need to convert it to a three.js path
-					var mesh = transformSVGPathExposed(feature);
+					//convert to three.js mesh path from geoJSON
+					var mesh = transformSVGPathExposed(feature)
 
-					// add to array
-					for (j = 0 ; j < mesh.length ; j++) {
-						  countries.push({"data": properties, "mesh": mesh[j]});
+					
+					for (j = 0; j < mesh.length; j++) {
+						  countries.push({"data": properties, "mesh": mesh[j]})
 					}
 				}
 
 				// extrude paths and add color
-				for (i = 0 ; i < countries.length ; i++) {
+				for (i = 0; i < countries.length; i++) {
 
 					var colorToStore = this.getInternetColor(countries[i].data, statedata)
 					// create material color based on average
 					var material = new THREE.MeshPhongMaterial({
 						color: colorToStore,
 						opacity:0.5
-					});
+					})
 					originalColorsUS[i] = colorToStore
 
 					// extrude mesh
 					var shape3d = countries[i].mesh.extrude({
 						amount: 1,
 						bevelEnabled: false
-					});
+					})
 
 					// create a mesh based on material and extruded shape
-					var toAdd = new THREE.Mesh(shape3d, material);
+					var toAdd = new THREE.Mesh(shape3d, material)
 
 					//set name of mesh
-					toAdd.name = countries[i].data.name;
+					toAdd.name = countries[i].data.name
 
-					// rotate and position the elements
-					toAdd.rotation.x = Math.PI/2;
-					toAdd.translateX(-490);
-					toAdd.translateZ(50);
-					toAdd.translateY(20);
+					// position the elements
+					toAdd.rotation.x = Math.PI/2
+					toAdd.translateX(-490)
+					toAdd.translateZ(50)
+					toAdd.translateY(20)
 
-					// add to scene
+					// add mesh to scene and US shapes array
 					shapesRenderedUS[i] = toAdd
-					this.scene.add(toAdd);
+					this.scene.add(toAdd)
 				}
 		},
 
@@ -218,18 +228,18 @@ $(function(){
 		// - color based on our internet speed data set
 
 		getArbitraryCountryColor: function(data) {
-			var multiplier = 0;
+			var multiplier = 0
 
 			// - just gets the first 3 letters of the country's 
 			// - name and makes an arbitrary # with them.
 			for(i = 0; i < 3; i++) {
-				multiplier += data.name.charCodeAt(i);
+				multiplier += data.name.charCodeAt(i)
 			}
 
 			// - use our previously calculated arbitrary number
 			// - to make a color
-			multiplier = (1.0/366)*multiplier;
-			return multiplier*0xffffff;
+			multiplier = (1.0/366)*multiplier
+			return multiplier*0xffffff
 		},
 		// - colors form light to dark based on internet speed:
 		// - #ffbaba, #ff7b7b, #ff5252, #ff0000, #a70000
@@ -341,44 +351,44 @@ $(function(){
 						
 						for (var j = 0; j < shapesToRecolor.length; j++) {
 							if(shapesToRecolor[j].name == index){
-								shapesToRecolor[j].material.color.setHex(0xffbaba); 
+								shapesToRecolor[j].material.color.setHex(0xffbaba)
 							}
 						}
 						
 					}else if(eval < 2){
 						for (var j = 0; j < shapesToRecolor.length; j++) {
 							if(shapesToRecolor[j].name == index){
-								shapesToRecolor[j].material.color.setHex(0xff7b7b); 
+								shapesToRecolor[j].material.color.setHex(0xff7b7b)
 							}
 						}
 					}else if(eval < 3){
 						for (var j = 0; j < shapesToRecolor.length; j++) {
 							if(shapesToRecolor[j].name == index){
-								shapesToRecolor[j].material.color.setHex(0xff5252); 
+								shapesToRecolor[j].material.color.setHex(0xff5252)
 							}
 						}
 					}else if(eval < 4){
 						for (var j = 0; j < shapesToRecolor.length; j++) {
 							if(shapesToRecolor[j].name == index){
-								shapesToRecolor[j].material.color.setHex(0xff0000); 
+								shapesToRecolor[j].material.color.setHex(0xff0000)
 							}
 						}
 					}else if(eval < 5){
 						for (var j = 0; j < shapesToRecolor.length; j++) {
 							if(shapesToRecolor[j].name == index){
-								shapesToRecolor[j].material.color.setHex(0xa70000);
+								shapesToRecolor[j].material.color.setHex(0xa70000)
 							}
 						}						 
 					}else if(eval >= 5){
 						for (var j = 0; j < shapesToRecolor.length; j++) {
 							if(shapesToRecolor[j].name == index){
-								shapesToRecolor[j].material.color.setHex(0x5b0000); 
+								shapesToRecolor[j].material.color.setHex(0x5b0000)
 							}
 						}
 					}else{
 						for (var j = 0; j < shapesToRecolor.length; j++) {
 							if(shapesToRecolor[j].name == index){
-								shapesToRecolor[j].material.color.setHex(0xffffff);
+								shapesToRecolor[j].material.color.setHex(0xffffff)
 							}
 						}						
 					}			
@@ -446,7 +456,7 @@ $(function(){
 
 			//wipes all colors from the current canvas
 			for(j=0; j<shapesToRecolor.length;j++){
-				shapesToRecolor[j].material.color.setHex(0xffffff); 
+				shapesToRecolor[j].material.color.setHex(0xffffff)
 			}
 
 			for (var index in countryorstatedata) {
@@ -473,43 +483,43 @@ $(function(){
 					if(eval < 1){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+								shapesToRecolor[i].material.color.setHex(0xffbaba)
 							}
 						}
 					}else if(eval < 2){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff7b7b); 
+								shapesToRecolor[i].material.color.setHex(0xff7b7b)
 							}
 						}
 					}else if(eval < 3){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){						
-								shapesToRecolor[i].material.color.setHex(0xff5252); 
+								shapesToRecolor[i].material.color.setHex(0xff5252) 
 							}
 						}
 					}else if(eval < 4){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff0000);
+								shapesToRecolor[i].material.color.setHex(0xff0000)
 							}
 						} 
 					}else if(eval < 5){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xa70000); 
+								shapesToRecolor[i].material.color.setHex(0xa70000)
 							}
 						}
 					}else if(eval >= 5){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0x5b0000); 
+								shapesToRecolor[i].material.color.setHex(0x5b0000)
 							}
 						}
 					}else{
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xffffff);
+								shapesToRecolor[i].material.color.setHex(0xffffff)
 							}
 						}
 					}				
@@ -575,7 +585,7 @@ $(function(){
 
 			//wipes all colors from the current canvas
 			for(j=0; j<shapesToRecolor.length;j++){
-				shapesToRecolor[j].material.color.setHex(0xffffff); 
+				shapesToRecolor[j].material.color.setHex(0xffffff)
 			}
 
 			for (var index in countryorstatedata) {
@@ -602,43 +612,43 @@ $(function(){
 					if(eval < 1){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+								shapesToRecolor[i].material.color.setHex(0xffbaba) 
 							}
 						}
 					}else if(eval < 2){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff7b7b);
+								shapesToRecolor[i].material.color.setHex(0xff7b7b)
 							}
 						} 
 					}else if(eval < 3){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff5252); 
+								shapesToRecolor[i].material.color.setHex(0xff5252)
 							}
 						}
 					}else if(eval < 4){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff0000); 
+								shapesToRecolor[i].material.color.setHex(0xff0000)
 							}
 						}
 					}else if(eval < 5){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xa70000); 
+								shapesToRecolor[i].material.color.setHex(0xa70000)
 							}
 						}
 					}else if(eval >= 5){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0x5b0000);
+								shapesToRecolor[i].material.color.setHex(0x5b0000)
 							}
 						} 
 					}else{
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xffffff);
+								shapesToRecolor[i].material.color.setHex(0xffffff)
 							}
 						}
 					}				
@@ -656,7 +666,7 @@ $(function(){
 
 			//wipes all colors from the current canvas
 			for(j=0; j<shapesToRecolor.length;j++){
-				shapesToRecolor[j].material.color.setHex(0xffffff); 
+				shapesToRecolor[j].material.color.setHex(0xffffff)
 			}
 
 			for (var index in countryorstatedata) {
@@ -676,44 +686,43 @@ $(function(){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
 	
-								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+								shapesToRecolor[i].material.color.setHex(0xffbaba)
 							}
 						}
-						
 					}else if(eval < 20){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff7b7b); 
+								shapesToRecolor[i].material.color.setHex(0xff7b7b)
 							}
 						}
 					}else if(eval < 30){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff5252); 
+								shapesToRecolor[i].material.color.setHex(0xff5252)
 							}
 						}
 					}else if(eval < 40){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff0000);
+								shapesToRecolor[i].material.color.setHex(0xff0000)
 							}
 						} 
 					}else if(eval < 50){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xa70000); 
+								shapesToRecolor[i].material.color.setHex(0xa70000)
 							}
 						}
 					}else if(eval >= 50){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0x5b0000); 
+								shapesToRecolor[i].material.color.setHex(0x5b0000)
 							}
 						}
 					}else{
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xffffff);
+								shapesToRecolor[i].material.color.setHex(0xffffff)
 							}
 						}
 					}				
@@ -731,7 +740,7 @@ $(function(){
 
 			//wipes all colors from the current canvas
 			for(j=0; j<shapesToRecolor.length;j++){
-				shapesToRecolor[j].material.color.setHex(0xffffff); 
+				shapesToRecolor[j].material.color.setHex(0xffffff)
 			}
 
 			for (var index in countryorstatedata) {
@@ -749,44 +758,44 @@ $(function(){
 					if(eval < 1){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xffbaba); 
+								shapesToRecolor[i].material.color.setHex(0xffbaba)
 							}
 						}
 						
 					}else if(eval < 2){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff7b7b); 
+								shapesToRecolor[i].material.color.setHex(0xff7b7b)
 							}
 						}
 					}else if(eval < 3){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff5252); 
+								shapesToRecolor[i].material.color.setHex(0xff5252)
 							}
 						}
 					}else if(eval < 4){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xff0000); 
+								shapesToRecolor[i].material.color.setHex(0xff0000)
 							}
 						}
 					}else if(eval < 5){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xa70000);
+								shapesToRecolor[i].material.color.setHex(0xa70000)
 							}
 						} 
 					}else if(eval >= 5){
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0x5b0000); 
+								shapesToRecolor[i].material.color.setHex(0x5b0000)
 							}
 						}
 					}else{
 						for (var i = 0; i < shapesToRecolor.length; i++) {
 							if(shapesToRecolor[i].name == index){
-								shapesToRecolor[i].material.color.setHex(0xffffff);
+								shapesToRecolor[i].material.color.setHex(0xffffff)
 							}
 						}
 					}				
@@ -794,94 +803,98 @@ $(function(){
 			}
 		},
 
+		//sets the desired camera position to passed vars
 		setCameraPosition: function(x, y, z, lx, lz) {
-			this.CAMERA_X = x;
-			this.CAMERA_Y = y;
-			this.CAMERA_Z = z;
-			this.CAMERA_LX = lx;
-			this.CAMERA_LZ = lz;
+			this.CAMERA_X = x
+			this.CAMERA_Y = y
+			this.CAMERA_Z = z
+			this.CAMERA_LX = lx
+			this.CAMERA_LZ = lz
 		},
 
 		moveCamera: function() {
-			var speed = 0.2;
-			var target_x = (this.CAMERA_X - this.camera.position.x) * speed;
-			var target_y = (this.CAMERA_Y - this.camera.position.y) * speed;
-			var target_z = (this.CAMERA_Z - this.camera.position.z) * speed;
+			var speed = 0.2
+			var target_x = (this.CAMERA_X - this.camera.position.x) * speed
+			var target_y = (this.CAMERA_Y - this.camera.position.y) * speed
+			var target_z = (this.CAMERA_Z - this.camera.position.z) * speed
 
-			this.camera.position.x += target_x;
-			this.camera.position.y += target_y;
-			this.camera.position.z += target_z;
+			this.camera.position.x += target_x
+			this.camera.position.y += target_y
+			this.camera.position.z += target_z
 
-			this.camera.lookAt( {x: this.CAMERA_LX, y: 0, z: this.CAMERA_LZ } );
+			this.camera.lookAt( {x: this.CAMERA_LX, y: 0, z: this.CAMERA_LZ } )
 		},
 
 		animate: function() {
 
-			if( this.CAMERA_X != this.camera.position.x ||
-				this.CAMERA_Y != this.camera.position.y ||
-				this.CAMERA_Z != this.camera.position.z) {
-				this.moveCamera();
+			//check to see if our desired camera position
+			//equals our actual camera position if it has
+			//set the camera to this new position
+			if(this.CAMERA_X != this.camera.position.x ||
+			   this.CAMERA_Y != this.camera.position.y ||
+			   this.CAMERA_Z != this.camera.position.z) {
+			   this.moveCamera()
 			}
 
 			// find intersections
-			var vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
-			this.projector.unprojectVector( vector, this.camera );
-			var raycaster = new THREE.Ray( this.camera.position, vector.subSelf( this.camera.position ).normalize() );
-			var intersects = raycaster.intersectObjects( this.scene.children );
+			var vector = new THREE.Vector3(mouse.x, mouse.y, 1)
+			this.projector.unprojectVector(vector, this.camera)
+			var raycaster = new THREE.Ray(this.camera.position, vector.subSelf( this.camera.position ).normalize())
+			var intersects = raycaster.intersectObjects(this.scene.children)
 
-			var objects = this.scene.children;
+			var objects = this.scene.children
 
 			if ( intersects.length > 1 ) {
 				if(this.INTERSECTED != intersects[ 0 ].object) {
 					if (this.INTERSECTED) {
 						for(i = 0; i < objects.length; i++) {
 							if (objects[i].name == this.INTERSECTED.name) {
-								objects[i].material.opacity = 0.5;
-								objects[i].scale.z = 1;
+								objects[i].material.opacity = 0.5
+								objects[i].scale.z = 1
 							}
 						}
-						this.INTERSECTED = null;
+						this.INTERSECTED = null
 					}
 				}
 
-				this.INTERSECTED = intersects[ 0 ].object;
+				this.INTERSECTED = intersects[ 0 ].object
 				for(i = 0; i < objects.length; i++) {
 					if (objects[i].name == this.INTERSECTED.name) {
-						objects[i].material.opacity = 1.0;
-						objects[i].scale.z = 5;
+						objects[i].material.opacity = 1.0
+						objects[i].scale.z = 5
 					}
 				}
 
 			} else if (this.INTERSECTED) {
 				for(i = 0; i < objects.length; i++) {
 					if (objects[i].name == this.INTERSECTED.name) {
-						objects[i].material.opacity = 0.5;
-						objects[i].scale.z = 1;
+						objects[i].material.opacity = 0.5
+						objects[i].scale.z = 1
 					}
 				}
-				this.INTERSECTED = null;
+				this.INTERSECTED = null
 			}
 
-			this.render();
+			this.render()
 		},
 
 		render: function() {
 
 			// actually render the scene
-			this.renderer.render(this.scene, this.camera);
+			this.renderer.render(this.scene, this.camera)
 		}
 	};
 
 	function init() {
 
-		worldMap = new Map();
+		worldMap = new Map()
 
-		worldMap.init_d3();
-		worldMap.init_tree();
+		worldMap.init_d3()
+		worldMap.init_tree()
 
-		worldMap.add_light(0, 3000, 0, 1.0, 0xFFFFFF);
-		worldMap.add_plane(1400, 700, 30, 0xEEEEEE);
-
+		worldMap.add_light(0, 3000, 0, 1.0, 0xFFFFFF) //adds a standard lighting color scheme
+		worldMap.add_plane(1400, 700, 30, 0xF5EDE3) //adds a bone colored slab under the continents
+ 
 		$.when($.getJSON("shapes/stateshapes.json")).then(function(data){
 
 			$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
@@ -898,86 +911,84 @@ $(function(){
 			var onFrame = window.requestAnimationFrame;
 
 			function tick(timestamp) {
-				worldMap.animate();
+				worldMap.animate()
 
 				if(worldMap.INTERSECTED) {
-					$('#country-name').html(worldMap.INTERSECTED.name);
-					/*data = "aftr"
-					/* Initialize tooltip */
-					/*var tip = d3.tip().attr('class', 'd3-tip').html(function(d) { return d; });
-					var w = 20,
-						h = 20
-					var vis = d3.select('#country-name')
-						.append('svg')
-						.attr('width',w)
-						.attr('height', h)
-					/* Invoke the tip in the context of your visualization */
-					//vis.call(tip)
-
-					/*vis.selectAll('rect')
-					  .data(data)
-					.enter().append('rect')
-					  .attr('width', w)
-					  .attr('height', h)
-					  .on('mouseover', tip.show)
-					  .on('mouseout', tip.hide)	*/
+					$('#country-name').html(worldMap.INTERSECTED.name)
 
 				} else {
-					$('#country-name').html("");
+					$('#country-name').html("")
 				}
 
-				onFrame(tick);
+				onFrame(tick)
 			}
 
-			onFrame(tick);
+			onFrame(tick)
 
-			document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-			window.addEventListener( 'resize', onWindowResize, false );
+			document.addEventListener( 'mousemove', onDocumentMouseMove, false )
+			window.addEventListener( 'resize', onWindowResize, false )
 
 		})
 	}
 
 	function onDocumentMouseMove( event ) {
 
-		event.preventDefault();
+		event.preventDefault()
 
-		mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-		mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+		mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1
+		mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1
 	}
 
 	function onWindowResize() {
 
-		windowHalfX = window.innerWidth / 2;
-		windowHalfY = window.innerHeight / 2;
+		windowHalfX = window.innerWidth/2
+		windowHalfY = window.innerHeight/2
 
-		worldMap.camera.aspect = window.innerWidth / window.innerHeight;
-		worldMap.camera.updateProjectionMatrix();
+		worldMap.camera.aspect = window.innerWidth / window.innerHeight
+		worldMap.camera.updateProjectionMatrix()
 
-		worldMap.renderer.setSize( window.innerWidth, window.innerHeight );
+		worldMap.renderer.setSize(window.innerWidth, window.innerHeight)
 	}
 
+	//first input rotates around the perpendicular axis
+	//second input controls height
+	//third input controls view angle
+	//fourth input LX controls x on the map
+	//fifth input LZ controls up and down on the map
+	//step one set LX and LZ then adjust angles in first three
+	//inputs to achieve the proper balance an non-contorted view
+	//http://msdn.microsoft.com/en-us/library/ie/dn479430%28v=vs.85%29.aspx
 	$('ul.list-unstyled li.sub-nav a').click(function() {
 		switch (this.hash) {
 		   case "#africa":
-			  worldMap.setCameraPosition(100, 320, 200, 100, 50);
+			  worldMap.setCameraPosition(100, 320, 200, 100, 50)
 			  break;
+		   case "#middleeast":
+		   	  worldMap.setCameraPosition(200, 225, -25, 200, -75)
+		   	  break;
 		   case "#europe":
-			  worldMap.setCameraPosition(75, 210, -75, 75, -150);
+			  worldMap.setCameraPosition(75, 210, -75, 75, -150)
 			  break;
 		   case "#asiapacific":
-			  worldMap.setCameraPosition(400, 350, 100, 400, -100);
+			  worldMap.setCameraPosition(400, 350, 100, 400, -100)
 			  break;
 		   case "#merica":
-			  worldMap.setCameraPosition(-300, 350, -90, -300, -120);
+			  worldMap.setCameraPosition(-300, 350, -90, -300, -120)
+			  break;
+		   case "#hawaii":
+			  worldMap.setCameraPosition(-500, 350, 50, -550, -120)
+			  break;
+		   case "#centralamerica":
+		   	  worldMap.setCameraPosition(-250, 200, 50, -250, 0)
 			  break;
 		   case "#latinamerica":
-		   	  worldMap.setCameraPosition(-200, 350, 250, -200, 120);
+		   	  worldMap.setCameraPosition(-200, 350, 250, -200, 120)
 			  break;
 		   case "#oceania":
-			  worldMap.setCameraPosition(500, 270, 300, 500, 120);
+			  worldMap.setCameraPosition(500, 375, 200, 500, 120)
 			  break;
 		   case "#all":
-			  worldMap.setCameraPosition(0, 1000, 500, 0, 0);
+			  worldMap.setCameraPosition(0, 1000, 500, 0, 0)
 			  break;
 		   case "#2008":
 				$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
@@ -1091,9 +1102,20 @@ $(function(){
 					worldMap.getInternetYearColor(statedata,'100', shapesRenderedUS, originalColorsUS)
 				})
 		   		break;
+		   case "#resetall":
+		   		$.when($.getJSON("internetdata/countrydatafinal.json")).then(function(countrydata){
+					worldMap.getInternetYearColor(countrydata,'100', shapesRendered, originalColors)
+				})
+				$.when($.getJSON("internetdata/statedatafinal.json")).then(function(statedata){
+					worldMap.getInternetYearColor(statedata,'100', shapesRenderedUS, originalColorsUS)
+				})
+				currentYear = ''
+				break;
 		}
-	});
+	})
+	
+	// - when the window first loads up call the init()
+	// - function, and start ze chain of events!
+	window.onload = init
 
-	window.onload = init;
-
-}());
+}())
