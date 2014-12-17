@@ -4,6 +4,14 @@ datamap
 Maps various measured internet data onto a navigable world map.
 
 
+## Usage
+
+Just clone the repo and run 
+```
+node index.js
+```
+
+then go to the url`http://localhost:5000` and you'll see the map.
 
 ## Sources:
 
