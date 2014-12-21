@@ -1,4 +1,3 @@
-var handlebars = require('express-handlebars')
 var express = require('express')
 var path = require('path')
 var app = express()

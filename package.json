@@ -1,16 +1,14 @@
 {
   "name": "datamap",
   "version": "0.0.0",
-  "description": "map data onto a visualized map",
+  "description": "internet data onto a visualized map",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "d3-tip": "^0.6.7",
-    "express": "~4.9.x",
-    "express-handlebars": "latest",
-    "handlebars": "latest"
+    "express": "~4.9.x"
   },
   "engines": {
     "node": "0.10.x"
