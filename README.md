@@ -17,7 +17,7 @@ node index.js
 ```
 then go to the url`http://localhost:5000` and you'll see the map.
 
-You can also check out a working version online at <a href="https://datamap.herokuapp.com/">https://datamap.herokuapp.com/</a>. It's slow but it works.
+You can also check out a working version online at <a href="https://datamap.herokuapp.com/">https://datamap.herokuapp.com/</a>. The heroku version is much slower than cloning the repo and running locally.
 
 ## Sources:
 
