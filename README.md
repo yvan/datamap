@@ -7,7 +7,7 @@ Requires node.js install and npm.
 
 ## Usage
 
-Just clone the repo and run
+Just clone the repo and run:
 ```
 npm install
 ```
@@ -15,7 +15,7 @@ then run
 ```
 node index.js
 ```
-then go to the url`http://localhost:5000` and you'll see the map.
+inside the new repo directory. Then go to the url`http://localhost:5000` and you'll see the map.
 
 You can also check out a working version online at <a href="https://datamap.herokuapp.com/">https://datamap.herokuapp.com/</a>. The heroku version is much slower than cloning the repo and running locally.
 
