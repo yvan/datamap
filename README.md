@@ -21,7 +21,8 @@ You can also check out a working version online at <a href="https://datamap.hero
 
 here is a screenshot:
 
-![image of screen](https://github.com/yvan/datamap/tree/master/static/screen.png)
+![image of screen]
+(https://github.com/yvan/datamap/tree/master/static/screen.png)
 
 ## Sources:
 
